@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 from alpaca_trade_api import REST
-from finbert_utils import estimate_sentiment
+from finbert_utils import _estimate_sentiment
 from joblib import Memory
 from lumibot.backtesting import PolygonDataBacktesting
 from lumibot.brokers import Alpaca
@@ -18,17 +18,22 @@ ALPACA_CREDS = {
 }
 
 os.makedirs("cache/tradingbot", exist_ok=True)
-memory = Memory(location="cache/tradingbot", verbose=0)
+MEMORY = Memory(location="cache/tradingbot", verbose=0)
 
-alpaca_api = REST(
+ALPACA_API = REST(
     base_url=BASE_URL, key_id=ALPACA_CREDS["API_KEY"], secret_key=ALPACA_CREDS["API_SECRET"]
 )
 
 
-@memory.cache
+@MEMORY.cache
 def get_news(symbol: str, start: str, end: str):
     global alpaca_api
-    return alpaca_api.get_news(symbol=symbol, start=start, end=end)
+    return ALPACA_API.get_news(symbol=symbol, start=start, end=end)
+
+
+@MEMORY.cache
+def estimate_sentiment(news):
+    return _estimate_sentiment(news)
 
 
 class _MlTrader(Strategy):
@@ -37,7 +42,6 @@ class _MlTrader(Strategy):
         self.sleeptime = "24H"
         self.last_trade = None
         self.cash_at_risk = cash_at_risk
-
 
     def position_sizing(self):
         cash = self.get_cash()
